@@ -7,12 +7,13 @@ import (
 	"github.com/aws/aws-lambda-go/lambda"
 )
 
-type MyEvent struct {
-	Name string `json:"name"`
+type MyBook struct {
+	ID    string `json:"id,omitempty"`
+	Title string `json:"title,omitempty"`
 }
 
-func HandleRequest(ctx context.Context, name MyEvent) (string, error) {
-	msg := fmt.Sprintf("Hello %s!", name.Name)
+func HandleRequest(ctx context.Context, book MyBook) (string, error) {
+	msg := fmt.Sprintf("ID: %s, Title: %s", book.ID, book.Title)
 	fmt.Println(msg)
 
 	return msg, nil

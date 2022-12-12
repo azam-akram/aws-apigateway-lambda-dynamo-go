@@ -28,7 +28,7 @@ Collection
 helper-*
 
 # Archives
-*.zip
+/lambda/*.zip
 
 # Binaries
 *main
