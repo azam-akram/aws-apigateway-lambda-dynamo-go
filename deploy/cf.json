@@ -7,6 +7,9 @@
         },
         "pLambdaCodeS3KeyPath": {
             "Type": "String"
+        },
+        "pDynamoARN": {
+            "Type": "String"
         }
     },
     "Resources": {
@@ -27,7 +30,7 @@
                 },
                 "Policies": [
                     {
-                        "PolicyName": "observability",
+                        "PolicyName": "lambdaCloudWatchPolicy",
                         "PolicyDocument": {
                             "Statement": [
                                 {
@@ -41,6 +44,29 @@
                                 }
                             ]
                         }
+                    },
+                    {
+                        "PolicyName": "lambdaDynamoPolicy",
+                        "PolicyDocument": {
+                            "Version": "2012-10-17",
+                            "Statement": [
+                                {
+                                    "Effect": "Allow",
+                                    "Action": [
+                                        "dynamodb:GetItem",
+                                        "dynamodb:UpdateItem",
+                                        "dynamodb:Query",
+                                        "dynamodb:PutItem",
+                                        "dynamodb:DeleteItem"
+                                    ],
+                                    "Resource": [
+                                        {
+                                            "Ref": "pDynamoARN"
+                                        }
+                                    ]
+                                }
+                            ]
+                        }                        
                     }
                 ]
             }
