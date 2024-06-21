@@ -12,24 +12,24 @@ import (
 	"github.com/azam-akram/aws-apigateway-lambda-demo-go/model"
 )
 
-var handler Handler
+var handler DBHandler
 
 type DynamoHandler struct {
-	TableName   string
-	DynamoDBAPI dynamodbiface.DynamoDBAPI
+	tableName   string
+	dynamoDBAPI dynamodbiface.DynamoDBAPI
 }
 
-func NewDynamoHandler() Handler {
+func NewDynamoHandler(tName string) DBHandler {
 	if handler == nil {
 		handler = &DynamoHandler{
-			TableName:   "my-demo-dynamo-table",
-			DynamoDBAPI: GetDynamoInterface(),
+			tableName:   tName,
+			dynamoDBAPI: getDynamoInterface(),
 		}
 	}
 	return handler
 }
 
-func GetDynamoInterface() dynamodbiface.DynamoDBAPI {
+func getDynamoInterface() dynamodbiface.DynamoDBAPI {
 	dynamoSession := session.Must(session.NewSessionWithOptions(session.Options{
 		SharedConfigState: session.SharedConfigEnable,
 	}))
@@ -51,10 +51,10 @@ func convertToDBRecord(book *model.MyBook) map[string]*dynamodb.AttributeValue {
 func (h *DynamoHandler) Save(book *model.MyBook) error {
 	input := &dynamodb.PutItemInput{
 		Item:      convertToDBRecord(book),
-		TableName: aws.String(h.TableName),
+		TableName: aws.String(h.tableName),
 	}
 
-	savedItem, err := h.DynamoDBAPI.PutItem(input)
+	savedItem, err := h.dynamoDBAPI.PutItem(input)
 	if err != nil {
 		log.Fatal("Failed to save Item: ", err.Error())
 		return err
@@ -73,10 +73,10 @@ func (h *DynamoHandler) Update(book *model.MyBook) error {
 
 	input := &dynamodb.PutItemInput{
 		Item:      item,
-		TableName: aws.String(h.TableName),
+		TableName: aws.String(h.tableName),
 	}
 
-	updatedItem, err := h.DynamoDBAPI.PutItem(input)
+	updatedItem, err := h.dynamoDBAPI.PutItem(input)
 	if err != nil {
 		return err
 	}
@@ -97,11 +97,11 @@ func (h *DynamoHandler) UpdateAttributeByID(id, key, value string) error {
 				S: aws.String(id),
 			},
 		},
-		TableName:        aws.String(h.TableName),
+		TableName:        aws.String(h.tableName),
 		UpdateExpression: aws.String("set " + key + " = :val"),
 	}
 
-	output, err := h.DynamoDBAPI.UpdateItem(&input)
+	output, err := h.dynamoDBAPI.UpdateItem(&input)
 	if err != nil {
 		return err
 	}
@@ -113,13 +113,13 @@ func (h *DynamoHandler) UpdateAttributeByID(id, key, value string) error {
 
 func (h *DynamoHandler) GetByID(id string) (*model.MyBook, error) {
 	input := &dynamodb.GetItemInput{
-		TableName: aws.String(h.TableName),
+		TableName: aws.String(h.tableName),
 		Key: map[string]*dynamodb.AttributeValue{
 			"id": {S: aws.String(id)},
 		},
 	}
 
-	item, err := h.DynamoDBAPI.GetItem(input)
+	item, err := h.dynamoDBAPI.GetItem(input)
 	if err != nil {
 		return nil, err
 	}
@@ -140,13 +140,13 @@ func (h *DynamoHandler) GetByID(id string) (*model.MyBook, error) {
 
 func (h *DynamoHandler) DeleteByID(id string) error {
 	input := &dynamodb.DeleteItemInput{
-		TableName: aws.String(h.TableName),
+		TableName: aws.String(h.tableName),
 		Key: map[string]*dynamodb.AttributeValue{
 			"id": {S: aws.String(id)},
 		},
 	}
 
-	_, err := h.DynamoDBAPI.DeleteItem(input)
+	_, err := h.dynamoDBAPI.DeleteItem(input)
 	if err != nil {
 		log.Fatal("Can't delete item by id = ", id)
 		return err

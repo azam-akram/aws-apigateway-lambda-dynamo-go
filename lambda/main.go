@@ -2,41 +2,64 @@ package main
 
 import (
 	"context"
-	"log"
+	"encoding/json"
+	"net/http"
 
+	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
-
 	"github.com/azam-akram/aws-apigateway-lambda-demo-go/dynamo_db"
 	"github.com/azam-akram/aws-apigateway-lambda-demo-go/model"
 )
 
-func HandleRequest(ctx context.Context, book model.MyBook) (*model.MyBook, error) {
-	log.Println("Received event with Book: ", book)
+func HandleRequest(ctx context.Context, req events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
+	dynamoHandler := dynamo_db.NewDynamoHandler("my-demo-dynamo-table")
 
-	dynamoHandler := dynamo_db.NewDynamoHandler()
-	if err := dynamoHandler.Save(&book); err != nil {
-		log.Fatal("Failed to save item, error: ", err.Error())
+	switch req.HTTPMethod {
+	case "POST":
+		var book model.MyBook
+		if err := json.Unmarshal([]byte(req.Body), &book); err != nil {
+			return events.APIGatewayProxyResponse{StatusCode: http.StatusBadRequest}, err
+		}
+		if err := dynamoHandler.Save(&book); err != nil {
+			return events.APIGatewayProxyResponse{StatusCode: http.StatusInternalServerError}, err
+		}
+		return events.APIGatewayProxyResponse{StatusCode: http.StatusOK, Body: req.Body}, nil
+
+	case "GET":
+		id := req.QueryStringParameters["id"]
+		book, err := dynamoHandler.GetByID(id)
+		if err != nil {
+			return events.APIGatewayProxyResponse{StatusCode: http.StatusInternalServerError}, err
+		}
+		if book == nil {
+			return events.APIGatewayProxyResponse{StatusCode: http.StatusNotFound}, nil
+		}
+		body, err := json.Marshal(book)
+		if err != nil {
+			return events.APIGatewayProxyResponse{StatusCode: http.StatusInternalServerError}, err
+		}
+		return events.APIGatewayProxyResponse{StatusCode: http.StatusOK, Body: string(body)}, nil
+
+	case "PUT":
+		var book model.MyBook
+		if err := json.Unmarshal([]byte(req.Body), &book); err != nil {
+			return events.APIGatewayProxyResponse{StatusCode: http.StatusBadRequest}, err
+		}
+		if err := dynamoHandler.Update(&book); err != nil {
+			return events.APIGatewayProxyResponse{StatusCode: http.StatusInternalServerError}, err
+		}
+		return events.APIGatewayProxyResponse{StatusCode: http.StatusOK, Body: req.Body}, nil
+
+	case "DELETE":
+		id := req.QueryStringParameters["id"]
+		if err := dynamoHandler.DeleteByID(id); err != nil {
+			return events.APIGatewayProxyResponse{StatusCode: http.StatusInternalServerError}, err
+		}
+		return events.APIGatewayProxyResponse{StatusCode: http.StatusOK}, nil
+
+	default:
+		return events.APIGatewayProxyResponse{StatusCode: http.StatusMethodNotAllowed}, nil
 	}
-
-	if err := dynamoHandler.UpdateAttributeByID(book.ID, "author", "Modified Author"); err != nil {
-		log.Fatal("Failed to update item's value by ID, error: ", err.Error())
-	}
-
-	updatedBook, err := dynamoHandler.GetByID(book.ID)
-	if err != nil {
-		log.Fatal("Failed to get item by ID, error: ", err.Error())
-	}
-
-	log.Println("Fetched updated Book from db: ", updatedBook)
-
-	err = dynamoHandler.DeleteByID(book.ID)
-	if err != nil {
-		log.Fatal("Failed to delete item by ID, error: ", err.Error())
-	}
-
-	log.Println("Item deleted")
-
-	return updatedBook, nil
 }
 
 func main() {
