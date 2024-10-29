@@ -9,7 +9,7 @@ import (
 	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbiface"
 
 	"github.com/aws/aws-sdk-go/aws/session"
-	"github.com/azam-akram/aws-apigateway-lambda-demo-go/model"
+	"github.com/dev-toolkit-go/aws-apigateway-lambda-demo-go/model"
 )
 
 var handler DBHandler

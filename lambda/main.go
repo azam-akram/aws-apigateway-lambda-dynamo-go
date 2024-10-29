@@ -7,8 +7,8 @@ import (
 
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
-	"github.com/azam-akram/aws-apigateway-lambda-demo-go/dynamo_db"
-	"github.com/azam-akram/aws-apigateway-lambda-demo-go/model"
+	"github.com/dev-toolkit-go/aws-apigateway-lambda-demo-go/dynamo_db"
+	"github.com/dev-toolkit-go/aws-apigateway-lambda-demo-go/model"
 )
 
 func HandleRequest(ctx context.Context, req events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
